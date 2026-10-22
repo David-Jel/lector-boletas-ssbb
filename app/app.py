@@ -20,6 +20,7 @@ from edificios import CONFIG
 
 VERDE = "#08424D"
 TEAL = "#00A8B4"
+VERSION = "v1.1 · 2026-10-22 (capturas emparejadas + Total con fórmula)"
 
 # Formatos de salida que ofrece la app y si usan capturas.
 FORMATOS = {
@@ -136,6 +137,7 @@ def _tabla(filas):
 st.set_page_config(page_title="Boletas SSBB · LAR", page_icon="💧", layout="wide")
 _encabezado()
 _auto_reconexion()
+st.caption(VERSION)
 
 if "uploader_key" not in st.session_state:
     st.session_state["uploader_key"] = 0
