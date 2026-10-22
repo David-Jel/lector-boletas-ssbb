@@ -165,8 +165,11 @@ def _parse_aguas(txt, path):
     mm = RE_AGUAS_MONTO.search(txt)
     monto = num_cl(mm.group(1)) if mm else None
     fecha = _fecha_abr(txt, r"FECHA\s+EMISI[ÓO]N")
-    # Vencimiento: puede venir como fecha o como 'CORTE EN TRÁMITE'
+    # Vencimiento: puede venir como fecha o como 'CORTE EN TRÁMITE' (cuenta vencida)
     venc = _fecha_abr(txt, r"VENCIMIENTO")
+    venc_nota = ""
+    if venc is None and re.search(r"CORTE\s+EN\s+TR[ÁA]MITE", txt, re.I):
+        venc_nota = "CORTE EN TRÁMITE"
     cm = RE_AGUAS_CONSUMO.search(txt)
     consumo = (cm.group(1) + " m3") if cm else ""
     cuenta_m = RE_CUENTA.search(txt)
@@ -175,7 +178,7 @@ def _parse_aguas(txt, path):
     return {
         "proveedor": "AGUAS ANDINAS", "tipo_doc": tipo, "folio": folio,
         "rut_emisor": RUT_AGUAS, "fecha_emision": fecha,
-        "periodo": (None, None), "vencimiento": venc,
+        "periodo": (None, None), "vencimiento": venc, "vencimiento_nota": venc_nota,
         "n_cuenta": n_cuenta, "depto": _depto_aguas(txt, path),
         "empresa": empresa, "torre": torre,
         "cliente": _cliente(txt), "consumo": consumo, "monto": monto,
@@ -228,7 +231,7 @@ def _parse_enel(txt, path):
     return {
         "proveedor": "ENEL", "tipo_doc": "BOLETA", "folio": folio,
         "rut_emisor": RUT_ENEL, "fecha_emision": fecha,
-        "periodo": (pini, pfin), "vencimiento": venc,
+        "periodo": (pini, pfin), "vencimiento": venc, "vencimiento_nota": "",
         "n_cuenta": n_cuenta, "depto": _depto_de_archivo(path),
         "empresa": "", "torre": "",
         "cliente": _cliente(txt), "consumo": consumo, "monto": monto,
@@ -256,8 +259,8 @@ def leer_boleta(path):
     else:
         r = {"proveedor": "", "tipo_doc": "", "folio": "", "rut_emisor": "",
              "fecha_emision": None, "periodo": (None, None), "vencimiento": None,
-             "n_cuenta": "", "depto": _depto_de_archivo(path), "empresa": "",
-             "torre": "", "cliente": "", "consumo": "", "monto": None}
+             "vencimiento_nota": "", "n_cuenta": "", "depto": _depto_de_archivo(path),
+             "empresa": "", "torre": "", "cliente": "", "consumo": "", "monto": None}
     r["metodo"] = "texto"
     faltan = [c for c in CAMPOS_OBLIG if _falta(r.get(c))]
     if not prov:

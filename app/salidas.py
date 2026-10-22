@@ -69,8 +69,13 @@ def construir_aguas(filas, ruta):
         ws.cell(row=r, column=3, value=cuerpo)
         ws.cell(row=r, column=4, value=dv)
         ws.cell(row=r, column=5, value=depto_consumo(f["depto"]))
-        cf = ws.cell(row=r, column=6, value=f.get("vencimiento"))
-        cf.number_format = _FMT_FECHA
+        venc = f.get("vencimiento")
+        if venc:
+            cf = ws.cell(row=r, column=6, value=venc)
+            cf.number_format = _FMT_FECHA
+        else:
+            # Sin fecha de vencimiento: dejar la nota del documento (p. ej. CORTE EN TRÁMITE).
+            ws.cell(row=r, column=6, value=f.get("vencimiento_nota", ""))
         ws.cell(row=r, column=7, value=f.get("torre", ""))
         cb = ws.cell(row=r, column=8, value=f.get("monto"))
         cp = ws.cell(row=r, column=9, value=f.get("monto_captura"))
