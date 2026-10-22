@@ -8,6 +8,7 @@ Hay dos formatos de Excel de destino:
 Para agregar un edificio nuevo, añade una entrada a EDIFICIOS_AGUAS con una
 palabra clave de su dirección, su EMPRESA y su TORRE.
 """
+import os
 import re
 
 CONFIG = {
@@ -69,12 +70,26 @@ def es_numerico(depto):
     return bool(re.fullmatch(r"\d{2,5}", str(depto).strip()))
 
 
+def normaliza_especial(s):
+    """Nombre canónico de una unidad especial, tolerando variantes de escritura:
+    'GASTOS COMUNES 1' / 'GASTO COMUNES 3' / 'GGCC 1' -> 'GASTO COMUN N'."""
+    s = re.sub(r"\s+", " ", str(s).upper()).strip()
+    s = re.sub(r"GASTOS?\s+COMUNE?S?", "GASTO COMUN", s)
+    s = re.sub(r"\bGGCC\b", "GASTO COMUN", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def depto_consumo(depto):
-    """Etiqueta de la columna DEPTO: número tal cual, o la unidad especial en
-    mayúsculas canónicas ('CALDERA ALTA', 'GASTO COMUN 1')."""
+    """Etiqueta de la columna DEPTO: número tal cual, o la unidad especial
+    canónica ('CALDERA ALTA', 'GASTO COMUN 1')."""
     d = str(depto).strip()
-    if es_numerico(d):
-        return d
-    du = re.sub(r"\s+", " ", d.upper())
-    du = du.replace("GASTOS COMUNES", "GASTO COMUN").replace("GGCC", "GASTO COMUN")
-    return du
+    return d if es_numerico(d) else normaliza_especial(d)
+
+
+def clave_match(texto):
+    """Clave para emparejar boleta <-> captura: el número inicial del nombre, o
+    el nombre de la unidad especial normalizado. Así 'gastos comunes 1.pdf',
+    'GASTO COMUN 1.png' y el depto 'GASTOS COMUNES 1' caen en la misma clave."""
+    s = os.path.splitext(os.path.basename(str(texto)))[0].strip()
+    m = re.match(r"(\d+)", s)
+    return m.group(1) if m else normaliza_especial(s)

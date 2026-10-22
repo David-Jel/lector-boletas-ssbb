@@ -62,7 +62,6 @@ def construir_aguas(filas, ruta):
             "FECHA CHECK IN", "TORRE", "Monto en boletas", "Monto en capturas"]
     _encabezado(ws, cols)
     r = 2
-    total_b = 0
     for f in _orden_num_primero(filas):
         n_cta, cuerpo, dv = partir_cuenta(f.get("n_cuenta", ""))
         ws.cell(row=r, column=1, value=f.get("empresa", ""))
@@ -77,13 +76,15 @@ def construir_aguas(filas, ruta):
         cp = ws.cell(row=r, column=9, value=f.get("monto_captura"))
         cb.number_format = cp.number_format = _FMT_MONTO
         _marcar_dif([cb, cp], f)
-        if isinstance(f.get("monto"), int):
-            total_b += f["monto"]
         r += 1
+    # Total como FÓRMULA (se recalcula si editas montos): suma boletas (H) y capturas (I).
     ws.cell(row=r, column=7, value="Total:").font = Font(bold=True)
-    ct = ws.cell(row=r, column=8, value=total_b)
-    ct.number_format = _FMT_MONTO
-    ct.font = Font(bold=True)
+    ultima = r - 1
+    if ultima >= 2:
+        for col, letra in ((8, "H"), (9, "I")):
+            ct = ws.cell(row=r, column=col, value=f"=SUM({letra}2:{letra}{ultima})")
+            ct.number_format = _FMT_MONTO
+            ct.font = Font(bold=True)
     _ajustar(ws, [14, 13, 13, 10, 14, 15, 7, 16, 16])
     wb.save(ruta)
 

@@ -132,18 +132,14 @@ def leer_montos_captura(path, texto=None):
 
 
 def _aparece(monto_pdf, texto):
-    """¿El monto del PDF aparece en el texto OCR? (con o sin separador de miles)."""
-    if monto_pdf is None:
+    """¿El monto del PDF aparece en el texto OCR? Tolera separadores de miles
+    (punto o espacio) entre cualquier grupo de dígitos, incluidos millones:
+    '2.503.780', '9 670', '76.530', etc."""
+    if monto_pdf is None or int(monto_pdf) < 100:
         return False
-    digitos = re.sub(r"[^\d]", " ", texto)
     objetivo = str(int(monto_pdf))
-    variantes = {objetivo}
-    if len(objetivo) > 3:  # con separador de miles: 9.670 -> "9 670"
-        variantes.add(objetivo[:-3] + " " + objetivo[-3:])
-    return any(
-        re.search(r"(?<!\d)" + re.escape(v).replace(r"\ ", r"\s*") + r"(?!\d)", digitos)
-        for v in variantes
-    )
+    patron = r"(?<!\d)" + r"[.\s]?".join(objetivo) + r"(?!\d)"
+    return re.search(patron, texto) is not None
 
 
 def verificar_captura(path, monto_pdf):

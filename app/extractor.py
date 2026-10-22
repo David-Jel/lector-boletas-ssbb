@@ -13,16 +13,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ssbb_parser import leer_boleta
 from captura_ocr import verificar_captura
 from salidas import ESCRITORES
-from edificios import es_numerico
+from edificios import es_numerico, clave_match
 
 IMG_EXT = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
 
 
 def _clave(nombre):
-    """Clave de empate boleta↔captura: dígitos iniciales o el nombre en mayúsculas."""
-    stem = os.path.splitext(os.path.basename(nombre))[0].strip()
-    m = re.match(r"(\d+)", stem)
-    return m.group(1) if m else re.sub(r"\s+", " ", stem.upper())
+    """Clave de empate boleta↔captura (número inicial o unidad especial normalizada)."""
+    return clave_match(nombre)
 
 
 def _indexar_capturas(carpeta):
@@ -35,9 +33,7 @@ def _indexar_capturas(carpeta):
 
 
 def _buscar_captura(idx, pdf_path, depto):
-    return (idx.get(_clave(pdf_path))
-            or idx.get(str(depto))
-            or idx.get(re.sub(r"\s+", " ", str(depto).upper())))
+    return idx.get(clave_match(pdf_path)) or idx.get(clave_match(depto))
 
 
 def _orden(f):
