@@ -1,0 +1,22 @@
+# NO subir boletas ni datos reales a GitHub (privacidad y peso)
+Aguas Andinas/
+Enel/
+*.xlsx
+*.xlsm
+salida_*.xlsx
+aguas_*.xlsx
+rendicion_*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Streamlit (nunca subir secretos)
+.streamlit/secrets.toml
+
+# Varios
+.DS_Store
+Thumbs.db

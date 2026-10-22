@@ -1,0 +1,10 @@
+# Lector de boletas de Servicios Básicos (SSBB) — LAR Group
+# Python 3.12 / 3.13 / 3.14
+pypdf>=5.0
+openpyxl>=3.1
+pandas>=2.0
+streamlit>=1.37
+pytesseract>=0.3.10
+Pillow>=10.0
+# Tesseract-OCR se instala aparte (con el idioma español) — solo se usa para
+# leer el monto de las capturas (pantallazos) del portal.

@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Lector SSBB",
+      "runtimeExecutable": "C:\\Users\\djeldres\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+      "runtimeArgs": ["-m", "streamlit", "run", "app/app.py",
+                      "--server.port", "8520", "--server.headless", "true"],
+      "port": 8520
+    }
+  ]
+}
