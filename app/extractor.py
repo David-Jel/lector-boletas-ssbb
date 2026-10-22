@@ -32,8 +32,47 @@ def _indexar_capturas(carpeta):
     return idx
 
 
-def _buscar_captura(idx, pdf_path, depto):
-    return idx.get(clave_match(pdf_path)) or idx.get(clave_match(depto))
+def _tokens(s):
+    """Palabras significativas (>=2 letras/dígitos) en mayúsculas."""
+    return [t for t in re.split(r"[^A-Z0-9]+", str(s).upper()) if len(t) >= 2]
+
+
+def _score(a, b):
+    """Nº de tokens de 'a' que calzan con alguno de 'b' (igual o prefijo de >=4)."""
+    n = 0
+    for x in a:
+        if any(x == y or (len(x) >= 4 and len(y) >= 4 and (x.startswith(y) or y.startswith(x)))
+               for y in b):
+            n += 1
+    return n
+
+
+def _asignar_capturas(filas, idx):
+    """{archivo_boleta: ruta_captura}. 1) empate EXACTO por clave (número o nombre
+    normalizado); 2) FUZZY por tokens para unidades especiales con nombres distintos
+    (p. ej. 'GC SECTOR NORTE' <-> 'GC SECT NORTE', 'quinchop.15' <-> 'P-15 QUINCHO'),
+    evitando asignaciones ambiguas o a deptos numéricos."""
+    asign, usadas = {}, set()
+    for f in filas:
+        for k in (clave_match(f.get("archivo", "")), clave_match(f.get("depto", ""))):
+            if k in idx and idx[k] not in usadas:
+                asign[f["archivo"]] = idx[k]; usadas.add(idx[k]); break
+    for f in filas:
+        if f.get("archivo") in asign or es_numerico(f.get("depto")):
+            continue
+        bt = _tokens(clave_match(f.get("depto", "")) or f.get("archivo", ""))
+        mejor_v, mejor_sc, empate = None, 0, False
+        for k, v in idx.items():
+            if v in usadas:
+                continue
+            sc = _score(bt, _tokens(k))
+            if sc > mejor_sc:
+                mejor_v, mejor_sc, empate = v, sc, False
+            elif sc == mejor_sc and sc > 0:
+                empate = True
+        if mejor_v and mejor_sc >= 2 and not empate:
+            asign[f["archivo"]] = mejor_v; usadas.add(mejor_v)
+    return asign
 
 
 def _orden(f):
@@ -46,10 +85,9 @@ def procesar_carpeta(boletas_dir, capturas_dir=None, con_captura=True, progreso=
     `progreso(i, n, nombre)` es un callback opcional para la UI."""
     pdfs = sorted(glob.glob(os.path.join(boletas_dir, "*.pdf")))
     idx = _indexar_capturas(capturas_dir) if con_captura else {}
+    # 1) Leer todas las boletas.
     filas = []
-    for i, p in enumerate(pdfs):
-        if progreso:
-            progreso(i, len(pdfs), os.path.basename(p))
+    for p in pdfs:
         try:
             f = leer_boleta(p)
         except Exception as e:                       # noqa: BLE001
@@ -58,20 +96,29 @@ def procesar_carpeta(boletas_dir, capturas_dir=None, con_captura=True, progreso=
                  "vencimiento": None, "n_cuenta": "", "depto": "", "cliente": "",
                  "consumo": "", "monto": None, "metodo": "error",
                  "estado": f"ERROR: {e}"}
-        # Reconciliación con la captura
+        filas.append(f)
+    # 2) Asignar capturas (exacto + fuzzy).
+    asign = _asignar_capturas(filas, idx) if con_captura else {}
+    # 3) OCR + reconciliación (la parte lenta: aquí va el progreso).
+    for i, f in enumerate(filas):
+        if progreso:
+            progreso(i, len(filas), f.get("archivo", ""))
         f["monto_captura"] = None
         f["estado_reconc"] = "SIN CAPTURA"
-        if con_captura:
-            cap = _buscar_captura(idx, p, f.get("depto"))
-            if cap:
-                est, mc = verificar_captura(cap, f.get("monto"))
-                f["estado_reconc"] = est
-                f["monto_captura"] = mc if mc is not None else f.get("monto")
-                if est == "OK":
-                    f["monto_captura"] = f.get("monto")
-        else:
+        if not con_captura:
             f["monto_captura"] = f.get("monto")
-        filas.append(f)
+            continue
+        cap = asign.get(f.get("archivo"))
+        if cap:
+            m = f.get("monto")
+            if m == 0:
+                # Boleta en $0 (sin deuda): no hay monto que cruzar, no es diferencia.
+                f["estado_reconc"] = "OK"
+                f["monto_captura"] = 0
+            else:
+                est, mc = verificar_captura(cap, m)
+                f["estado_reconc"] = est
+                f["monto_captura"] = m if est == "OK" else mc
     filas.sort(key=_orden)
     return filas
 

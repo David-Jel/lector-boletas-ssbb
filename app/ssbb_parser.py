@@ -31,8 +31,10 @@ from pypdf import PdfReader
 from edificios import empresa_torre
 
 # ── RUT de los emisores conocidos ──────────────────────────────────────────────
-RUT_AGUAS = "618080005"      # Aguas Andinas  61.808.000-5
-RUT_ENEL = "968005707"       # Enel           96.800.570-7
+# Aguas Andinas emite con más de un RUT según la zona/entidad del grupo.
+RUT_AGUAS = "618080005"                  # Aguas Andinas S.A.  61.808.000-5
+RUTS_AGUAS = ("618080005", "96809310K")  # + 96.809.310-K (p. ej. edificio Boldo)
+RUT_ENEL = "968005707"                   # Enel  96.800.570-7
 
 # ── Meses en español (abreviados y completos) ──────────────────────────────────
 MESES = {
@@ -175,9 +177,10 @@ def _parse_aguas(txt, path):
     cuenta_m = RE_CUENTA.search(txt)
     n_cuenta = re.sub(r"\s", "", cuenta_m.group(1)) if cuenta_m else ""
     empresa, torre = empresa_torre(txt)
+    emisor = next((r for r in RUTS_AGUAS if r in norm_rut(txt)), RUT_AGUAS)
     return {
         "proveedor": "AGUAS ANDINAS", "tipo_doc": tipo, "folio": folio,
-        "rut_emisor": RUT_AGUAS, "fecha_emision": fecha,
+        "rut_emisor": emisor, "fecha_emision": fecha,
         "periodo": (None, None), "vencimiento": venc, "vencimiento_nota": venc_nota,
         "n_cuenta": n_cuenta, "depto": _depto_aguas(txt, path),
         "empresa": empresa, "torre": torre,
@@ -242,10 +245,12 @@ def _parse_enel(txt, path):
 def _detectar_proveedor(txt):
     t = norm_rut(txt)  # quita todo menos dígitos y K; el RUT emisor aparece íntegro
     tu = txt.upper()
-    if RUT_AGUAS in t or "AGUAS ANDINAS" in tu or "61.808.000" in txt:
-        return "AGUAS ANDINAS"
     if RUT_ENEL in t or "ENEL" in tu or "96.800.570" in txt:
         return "ENEL"
+    # Aguas: cualquiera de sus RUT, el nombre, o su dirección fija (Balmaceda 1398).
+    if (any(r in t for r in RUTS_AGUAS) or "AGUAS ANDINAS" in tu
+            or "BALMACEDA 1398" in tu):
+        return "AGUAS ANDINAS"
     return ""
 
 

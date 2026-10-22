@@ -28,6 +28,7 @@ CONFIG = {
 EDIFICIOS_AGUAS = [
     {"kw": "SANTO DOMINGO 1410", "empresa": "VIENTO SUR", "torre": 3},
     {"kw": "MIRADOR AZUL",       "empresa": "BROOKLYN",   "torre": ""},
+    {"kw": "CLUB DE CAMPO 194",  "empresa": "BOLDO",      "torre": 3},
 ]
 
 # Código contable por proveedor (hoja "para pegar" de la rendición).
@@ -38,6 +39,7 @@ CODIGO_CONTABLE = {
 SERVICIO = {"ENEL": "Luz", "AGUAS ANDINAS": "Agua"}
 
 _RE_TORRE = re.compile(r"TORRE\s+([0-9A-Za-z]+)", re.I)
+_RE_EDIF = re.compile(r"EDIFICIO\s+(\d+)", re.I)   # p. ej. 'EDIFICIO 3 BOLDO'
 
 
 def empresa_torre(texto):
@@ -48,7 +50,7 @@ def empresa_torre(texto):
     # ("SANTO DOMINGO  1410") que rompería un match con un solo espacio.
     tu = re.sub(r"\s+", " ", texto.upper())
     torre_dir = ""
-    m = _RE_TORRE.search(texto)
+    m = _RE_TORRE.search(texto) or _RE_EDIF.search(texto)
     if m:
         torre_dir = m.group(1)
     for e in EDIFICIOS_AGUAS:
@@ -72,8 +74,10 @@ def es_numerico(depto):
 
 def normaliza_especial(s):
     """Nombre canónico de una unidad especial, tolerando variantes de escritura:
-    'GASTOS COMUNES 1' / 'GASTO COMUNES 3' / 'GGCC 1' -> 'GASTO COMUN N'."""
-    s = re.sub(r"\s+", " ", str(s).upper()).strip()
+    guiones/puntos como separadores ('CALD-ALTA PRESION' -> 'CALD ALTA PRESION'),
+    y 'GASTOS COMUNES 1' / 'GASTO COMUNES 3' / 'GGCC 1' -> 'GASTO COMUN N'."""
+    s = re.sub(r"[-.]", " ", str(s).upper())
+    s = re.sub(r"\s+", " ", s).strip()
     s = re.sub(r"GASTOS?\s+COMUNE?S?", "GASTO COMUN", s)
     s = re.sub(r"\bGGCC\b", "GASTO COMUN", s)
     return re.sub(r"\s+", " ", s).strip()
@@ -86,10 +90,17 @@ def depto_consumo(depto):
     return d if es_numerico(d) else normaliza_especial(d)
 
 
+_EXT_ARCHIVO = (".pdf", ".png", ".jpg", ".jpeg", ".webp", ".bmp")
+
+
 def clave_match(texto):
     """Clave para emparejar boleta <-> captura: el número inicial del nombre, o
     el nombre de la unidad especial normalizado. Así 'gastos comunes 1.pdf',
-    'GASTO COMUN 1.png' y el depto 'GASTOS COMUNES 1' caen en la misma clave."""
-    s = os.path.splitext(os.path.basename(str(texto)))[0].strip()
+    'GASTO COMUN 1.png' y el depto 'GASTOS COMUNES 1' caen en la misma clave.
+    Solo quita extensiones reales de archivo: 'QUINCHOP.15' conserva el '.15'."""
+    s = os.path.basename(str(texto)).strip()
+    base, ext = os.path.splitext(s)
+    if ext.lower() in _EXT_ARCHIVO:
+        s = base
     m = re.match(r"(\d+)", s)
     return m.group(1) if m else normaliza_especial(s)

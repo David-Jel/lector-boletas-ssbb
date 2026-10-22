@@ -20,7 +20,7 @@ from edificios import CONFIG
 
 VERDE = "#08424D"
 TEAL = "#00A8B4"
-VERSION = "v1.2 · 2026-10-22 (FECHA CHECK IN: fecha o 'CORTE EN TRÁMITE')"
+VERSION = "v1.3 · 2026-10-22 (Boldo + 2º RUT Aguas + capturas de unidades especiales)"
 
 # Formatos de salida que ofrece la app y si usan capturas.
 FORMATOS = {
