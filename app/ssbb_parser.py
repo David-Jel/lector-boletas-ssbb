@@ -116,6 +116,12 @@ def _depto_de_archivo(path):
     # Aguas: archivo = solo el número del depto
     if re.fullmatch(r"\d{2,4}", stem):
         return stem
+    # Nombre tipo 'BE - <folio> - Aguas Cordillera - <área>': el área (lo útil) es
+    # el último tramo ('GGCC', 'boiler 1', 'Piscina'). Se detecta por el folio
+    # largo entre los tramos separados por guion.
+    partes = [p.strip() for p in re.split(r"\s*-\s*", stem) if p.strip()]
+    if len(partes) >= 3 and any(re.fullmatch(r"\d{5,}", p) for p in partes):
+        return partes[-1].upper()
     # Especiales (gastos comunes, calderas, etc.): usar el nombre tal cual
     return stem.upper()
 
