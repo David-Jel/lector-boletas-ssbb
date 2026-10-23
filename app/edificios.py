@@ -25,14 +25,14 @@ CONFIG = {
 # Edificios de Aguas: palabra clave en la dirección de la boleta -> EMPRESA, TORRE
 # y RUT de la comunidad. La torre también se intenta leer de la dirección
 # ("EDIFICIO TORRE 3"); si no aparece (p. ej. calderas/gastos comunes), se usa la
-# de este config. El RUT de la comunidad va aquí porque no siempre aparece en el
-# texto de la boleta (en Nativo/Riesco va solo en la imagen del encabezado); si
-# queda en "", el lector intenta leerlo de la boleta.
+# de este config. El RUT de la comunidad se toma SOLO de aquí (no de la boleta,
+# que no siempre lo trae); si no se conoce, se deja en "" y la columna RUT va
+# vacía para ese edificio.
 EDIFICIOS_AGUAS = [
     {"kw": "SANTO DOMINGO 1410",     "empresa": "VIENTO SUR", "torre": 3,  "rut": "76.318.266-5"},
     {"kw": "MIRADOR AZUL",           "empresa": "BROOKLYN",   "torre": "", "rut": ""},
     {"kw": "CLUB DE CAMPO 194",      "empresa": "BOLDO",      "torre": 3,  "rut": "53.337.380-1"},
-    {"kw": "PRESIDENTE RIESCO 6007", "empresa": "NATIVO",     "torre": "", "rut": "53.327.177-4"},
+    {"kw": "PRESIDENTE RIESCO 6007", "empresa": "NATIVO",     "torre": "", "rut": ""},
 ]
 
 # Código contable por proveedor (hoja "para pegar" de la rendición).

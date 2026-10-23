@@ -67,20 +67,6 @@ def num_cl(s):
         return None
 
 
-_RE_RUT_FMT = re.compile(r"\d{1,2}\.\d{3}\.\d{3}\s*-\s*[\dkK]")
-
-
-def _rut_receptor(txt):
-    """RUT de la comunidad (receptor): el primer RUT con formato del texto que NO
-    es de Aguas Andinas. Devuelve '' si no hay (p. ej. Nativo no lo trae en el
-    texto, solo en la imagen del encabezado). Es el respaldo cuando el config no
-    tiene el RUT del edificio."""
-    for m in _RE_RUT_FMT.finditer(txt):
-        if norm_rut(m.group(0)) not in RUTS_AGUAS:
-            return re.sub(r"\s", "", m.group(0))
-    return ""
-
-
 def _mes(tok):
     return MESES.get(tok.strip().lower()[:3])
 
@@ -190,8 +176,7 @@ def _parse_aguas(txt, path):
     consumo = (cm.group(1) + " m3") if cm else ""
     cuenta_m = RE_CUENTA.search(txt)
     n_cuenta = re.sub(r"\s", "", cuenta_m.group(1)) if cuenta_m else ""
-    empresa, torre, rut_cfg = empresa_torre(txt)
-    rut_comunidad = rut_cfg or _rut_receptor(txt)
+    empresa, torre, rut_comunidad = empresa_torre(txt)
     emisor = next((r for r in RUTS_AGUAS if r in norm_rut(txt)), RUT_AGUAS)
     return {
         "proveedor": "AGUAS ANDINAS", "tipo_doc": tipo, "folio": folio,
