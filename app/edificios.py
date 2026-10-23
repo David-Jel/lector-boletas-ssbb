@@ -22,14 +22,17 @@ CONFIG = {
     },
 }
 
-# Edificios de Aguas: palabra clave en la dirección de la boleta -> EMPRESA y TORRE.
-# La torre también se intenta leer de la dirección ("EDIFICIO TORRE 3"); si no
-# aparece (p. ej. en calderas/gastos comunes), se usa la torre de este config.
+# Edificios de Aguas: palabra clave en la dirección de la boleta -> EMPRESA, TORRE
+# y RUT de la comunidad. La torre también se intenta leer de la dirección
+# ("EDIFICIO TORRE 3"); si no aparece (p. ej. calderas/gastos comunes), se usa la
+# de este config. El RUT de la comunidad va aquí porque no siempre aparece en el
+# texto de la boleta (en Nativo/Riesco va solo en la imagen del encabezado); si
+# queda en "", el lector intenta leerlo de la boleta.
 EDIFICIOS_AGUAS = [
-    {"kw": "SANTO DOMINGO 1410",     "empresa": "VIENTO SUR", "torre": 3},
-    {"kw": "MIRADOR AZUL",           "empresa": "BROOKLYN",   "torre": ""},
-    {"kw": "CLUB DE CAMPO 194",      "empresa": "BOLDO",      "torre": 3},
-    {"kw": "PRESIDENTE RIESCO 6007", "empresa": "NATIVO",     "torre": ""},
+    {"kw": "SANTO DOMINGO 1410",     "empresa": "VIENTO SUR", "torre": 3,  "rut": "76.318.266-5"},
+    {"kw": "MIRADOR AZUL",           "empresa": "BROOKLYN",   "torre": "", "rut": ""},
+    {"kw": "CLUB DE CAMPO 194",      "empresa": "BOLDO",      "torre": 3,  "rut": "53.337.380-1"},
+    {"kw": "PRESIDENTE RIESCO 6007", "empresa": "NATIVO",     "torre": "", "rut": "53.327.177-4"},
 ]
 
 # Código contable por proveedor (hoja "para pegar" de la rendición).
@@ -44,9 +47,9 @@ _RE_EDIF = re.compile(r"EDIFICIO\s+(\d+)", re.I)   # p. ej. 'EDIFICIO 3 BOLDO'
 
 
 def empresa_torre(texto):
-    """Devuelve (empresa, torre) para una boleta de Aguas según su dirección.
-    Si el edificio no está en el config, empresa queda en blanco (se completa a
-    mano) y la torre se toma de la dirección si aparece."""
+    """Devuelve (empresa, torre, rut) para una boleta de Aguas según su dirección.
+    Si el edificio no está en el config, empresa y rut quedan en blanco (se
+    completan a mano) y la torre se toma de la dirección si aparece."""
     # Normaliza espacios: la dirección suele traer doble espacio
     # ("SANTO DOMINGO  1410") que rompería un match con un solo espacio.
     tu = re.sub(r"\s+", " ", texto.upper())
@@ -56,8 +59,8 @@ def empresa_torre(texto):
         torre_dir = m.group(1)
     for e in EDIFICIOS_AGUAS:
         if re.sub(r"\s+", " ", e["kw"].upper()) in tu:
-            return e["empresa"], (torre_dir or e["torre"])
-    return "", torre_dir
+            return e["empresa"], (torre_dir or e["torre"]), e.get("rut", "")
+    return "", torre_dir, ""
 
 
 def partir_cuenta(n_cuenta):

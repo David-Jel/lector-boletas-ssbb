@@ -52,35 +52,52 @@ def _orden_num_primero(filas):
                   else (1, 0, str(f.get("depto")).upper()))
 
 
-# ── Aguas (formato único tipo Viento Sur) ────────────────────────────────────────
+# ── Aguas (formato único, 10 columnas) ───────────────────────────────────────────
+def _estado_fila(f):
+    """Texto de la columna ESTADO: OK cuando leyó bien y la captura coincide;
+    REVISAR si hubo problema de lectura o el monto difiere de la captura."""
+    if not str(f.get("estado", "")).startswith("OK"):
+        return "REVISAR"
+    er = f.get("estado_reconc")
+    if er == "DIFERENCIA":
+        return "REVISAR"
+    if er == "SIN CAPTURA":
+        return "SIN CAPTURA"
+    if er == "SIN_OCR":
+        return "OCR no disp."
+    return "OK"
+
+
 def construir_aguas(filas, ruta):
     cfg = CONFIG["aguas"]
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = cfg["hoja"]
-    cols = ["EMPRESA", "N° CLIENTE", "N° CLIENTE2", "DIGITO VERIFICADOR", "DEPTO",
-            "FECHA CHECK IN", "TORRE", "Monto en boletas", "Monto en capturas"]
+    cols = ["EMPRESA", "RUT", "N° CLIENTE", "DIGITO VERIFICADOR", "DEPTO / ÁREA",
+            "N° BOLETA", "FECHA VTO", "MONTO BOLETA", "MONTO CAPTURA", "ESTADO"]
     _encabezado(ws, cols)
     r = 2
     for f in _orden_num_primero(filas):
-        n_cta, cuerpo, dv = partir_cuenta(f.get("n_cuenta", ""))
+        _n_cta, cuerpo, dv = partir_cuenta(f.get("n_cuenta", ""))
         ws.cell(row=r, column=1, value=f.get("empresa", ""))
-        ws.cell(row=r, column=2, value=n_cta)
+        ws.cell(row=r, column=2, value=f.get("rut_comunidad", ""))
         ws.cell(row=r, column=3, value=cuerpo)
         ws.cell(row=r, column=4, value=dv)
         ws.cell(row=r, column=5, value=depto_consumo(f["depto"]))
+        folio = f.get("folio", "")
+        ws.cell(row=r, column=6, value=int(folio) if str(folio).isdigit() else folio)
         venc = f.get("vencimiento")
         if venc:
-            cf = ws.cell(row=r, column=6, value=venc)
+            cf = ws.cell(row=r, column=7, value=venc)
             cf.number_format = _FMT_FECHA
         else:
             # Sin fecha de vencimiento: dejar la nota del documento (p. ej. CORTE EN TRÁMITE).
-            ws.cell(row=r, column=6, value=f.get("vencimiento_nota", ""))
-        ws.cell(row=r, column=7, value=f.get("torre", ""))
+            ws.cell(row=r, column=7, value=f.get("vencimiento_nota", ""))
         cb = ws.cell(row=r, column=8, value=f.get("monto"))
         cp = ws.cell(row=r, column=9, value=f.get("monto_captura"))
         cb.number_format = cp.number_format = _FMT_MONTO
-        _marcar_dif([cb, cp], f)
+        ce = ws.cell(row=r, column=10, value=_estado_fila(f))
+        _marcar_dif([cb, cp, ce], f)
         r += 1
     # Total como FÓRMULA (se recalcula si editas montos): suma boletas (H) y capturas (I).
     ws.cell(row=r, column=7, value="Total:").font = Font(bold=True)
@@ -90,7 +107,7 @@ def construir_aguas(filas, ruta):
             ct = ws.cell(row=r, column=col, value=f"=SUM({letra}2:{letra}{ultima})")
             ct.number_format = _FMT_MONTO
             ct.font = Font(bold=True)
-    _ajustar(ws, [14, 13, 13, 10, 14, 15, 7, 16, 16])
+    _ajustar(ws, [14, 14, 12, 10, 16, 12, 13, 14, 14, 12])
     wb.save(ruta)
 
 

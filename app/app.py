@@ -20,7 +20,7 @@ from edificios import CONFIG
 
 VERDE = "#08424D"
 TEAL = "#00A8B4"
-VERSION = "v1.4 · 2026-10-23 (Nativo/Riesco + OCR del titular del portal: $0 y montos con $)"
+VERSION = "v1.5 · 2026-10-23 (formato Aguas único de 10 columnas: RUT, N° boleta y ESTADO)"
 
 # Formatos de salida que ofrece la app y si usan capturas.
 FORMATOS = {
