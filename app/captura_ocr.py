@@ -131,6 +131,47 @@ def leer_montos_captura(path, texto=None):
     return out, texto
 
 
+# Monto del titular del portal (arriba a la derecha): "$4.480", "$0".
+# El "$" suele leerse como "S" y "$0" como "SO" (S + letra O).
+_RE_TITULAR = re.compile(r"[\$S]\s?(\d{1,3}(?:\.\d{3})*|\d+|[Oo])")
+
+
+def _monto_titular(path):
+    """Lee el monto grande del titular del portal (la deuda vigente/vencida, que
+    va arriba a la derecha de la captura). Es texto grande y limpio, así que se
+    recorta esa zona y se OCR-ea aparte: así se recuperan montos que el OCR de la
+    imagen completa pierde ('$4.480' -> '480') o confunde con la fecha ('$0' ->
+    '2026'). Devuelve el monto (int, 0 incluido) o None si no lo encuentra."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    try:
+        img = Image.open(path).convert("L")
+    except Exception:
+        return None
+    crop = img.crop((int(img.width * 0.45), 0, img.width, int(img.height * 0.42)))
+    if crop.width < 2200:
+        f = 2200 / crop.width
+        crop = crop.resize((int(crop.width * f), int(crop.height * f)))
+    # Umbral: oscurece el texto gris claro del '$0' (deuda vigente al día) y, de
+    # paso, limpia el fondo para los montos normales.
+    crop = crop.point(lambda p: 0 if p < 190 else 255)
+    # Varias segmentaciones; se elige el match con MÁS dígitos: una pasada puede
+    # leer '$55 580' (separador perdido -> '55') y otra '$55.580' (completo).
+    mejor, mejor_dig = None, -1
+    for cfg in ("--psm 4", "--psm 6", "--psm 11"):
+        for m in _RE_TITULAR.finditer(_ocr_pass(crop, cfg)):
+            g = m.group(1)
+            if g in ("O", "o"):
+                val, ndig = 0, 0
+            else:
+                val, ndig = _num(g), len(re.sub(r"\D", "", g))
+            if val is not None and ndig > mejor_dig:
+                mejor, mejor_dig = val, ndig
+    return mejor
+
+
 def _aparece(monto_pdf, texto):
     """¿El monto del PDF aparece en el texto OCR? Tolera separadores de miles
     (punto o espacio) entre cualquier grupo de dígitos, incluidos millones:
@@ -162,5 +203,10 @@ def verificar_captura(path, monto_pdf):
             return "OK", monto_pdf
     if not acum.strip():
         return "SIN_OCR", None
+    # Hay diferencia: el monto a mostrar es el titular del portal. Se lee de la
+    # zona del titular (más fiable); si no se encuentra, se cae al OCR general.
+    tit = _monto_titular(path)
+    if tit is not None:
+        return "DIFERENCIA", tit
     montos, _ = leer_montos_captura(path, texto=acum)
     return "DIFERENCIA", (montos[0] if montos else None)

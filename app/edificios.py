@@ -26,9 +26,10 @@ CONFIG = {
 # La torre también se intenta leer de la dirección ("EDIFICIO TORRE 3"); si no
 # aparece (p. ej. en calderas/gastos comunes), se usa la torre de este config.
 EDIFICIOS_AGUAS = [
-    {"kw": "SANTO DOMINGO 1410", "empresa": "VIENTO SUR", "torre": 3},
-    {"kw": "MIRADOR AZUL",       "empresa": "BROOKLYN",   "torre": ""},
-    {"kw": "CLUB DE CAMPO 194",  "empresa": "BOLDO",      "torre": 3},
+    {"kw": "SANTO DOMINGO 1410",     "empresa": "VIENTO SUR", "torre": 3},
+    {"kw": "MIRADOR AZUL",           "empresa": "BROOKLYN",   "torre": ""},
+    {"kw": "CLUB DE CAMPO 194",      "empresa": "BOLDO",      "torre": 3},
+    {"kw": "PRESIDENTE RIESCO 6007", "empresa": "NATIVO",     "torre": ""},
 ]
 
 # Código contable por proveedor (hoja "para pegar" de la rendición).
