@@ -20,7 +20,7 @@ from edificios import CONFIG
 
 VERDE = "#08424D"
 TEAL = "#00A8B4"
-VERSION = "v1.6 · 2026-10-23 (edificios Tegualda y Los Andes V + área desde nombre 'BE - folio - área')"
+VERSION = "v1.7 · 2026-10-26 (edificio Residence / Manquehue Norte 882)"
 
 # Formatos de salida que ofrece la app y si usan capturas.
 FORMATOS = {

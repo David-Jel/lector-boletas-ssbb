@@ -35,6 +35,7 @@ EDIFICIOS_AGUAS = [
     {"kw": "PRESIDENTE RIESCO 6007", "empresa": "NATIVO",      "torre": "", "rut": ""},
     {"kw": "TEGUALDA 1662",          "empresa": "TEGUALDA",    "torre": "", "rut": "76.320.601-7"},
     {"kw": "MANQUEHUE NORTE 958",    "empresa": "LOS ANDES V", "torre": "", "rut": "53.336.724-0"},
+    {"kw": "MANQUEHUE NORTE 882",    "empresa": "RESIDENCE",   "torre": "", "rut": ""},
 ]
 
 # Código contable por proveedor (hoja "para pegar" de la rendición).
